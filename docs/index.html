@@ -53,7 +53,7 @@ main{padding-block:20px 64px}
 .btnrow{display:flex;gap:8px;flex-wrap:wrap}
 .btnrow .btn{flex:1;min-width:140px}
 label{font-weight:600;font-size:.9rem}
-select,textarea,input[type=text],input[type=date]{width:100%;box-sizing:border-box;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+select,textarea,input[type=text],input[type=password],input[type=date]{width:100%;box-sizing:border-box;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
 textarea{min-height:84px;resize:vertical}
 .field{display:flex;flex-direction:column;gap:6px}
 .row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
@@ -158,6 +158,10 @@ details summary{cursor:pointer;color:var(--pri-deep);font-size:.86rem;font-weigh
 
 <script src="cases.js" charset="utf-8"></script>
 <script>
+/* إعدادات Firebase للموقع المستقل. انسخي هنا firebaseConfig من Firebase Console.
+   لو فاضية (null)، اللعبة بتشتغل في وضع تجربة على جهاز واحد. */
+const FIREBASE_CONFIG = null;
+const FIREBASE_SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
 document.documentElement.setAttribute('lang','ar');
 const CASES = window.SAWA_CASES || [];
 const DOMAINS = window.SAWA_DOMAINS || {};
@@ -175,13 +179,24 @@ function fmtDate(iso){ try{ return new Date(iso).toLocaleDateString('ar-EG',{day
 function ago(iso){ if(!iso) return '–'; const d=Math.floor((Date.now()-new Date(iso))/864e5); return d<=0?'النهارده':d===1?'امبارح':d<7?`من ${d} أيام`:fmtDate(iso) }
 
 /* ---------- storage: shared db inside Claude, browser storage elsewhere ---------- */
+function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=rej; document.head.appendChild(s) }) }
 const Store = {
-  mode:'local', db:null, cache:{}, listeners:{},
+  mode:'local', db:null, fs:null, auth:null, user:null, cache:{}, listeners:{},
   async init(){
     if(window.claude && typeof claude.use==='function'){
-      try{ const db = await claude.use('db'); if(db){ this.db=db; this.mode='db' } }catch(e){}
+      try{ const db = await claude.use('db'); if(db){ this.db=db; this.mode='db'; return } }catch(e){}
+    }
+    if(FIREBASE_CONFIG){
+      try{
+        for(const f of ['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js']) await loadScript(FIREBASE_SDK+f);
+        firebase.initializeApp(FIREBASE_CONFIG); this.auth=firebase.auth(); this.fs=firebase.firestore();
+        this.user = await new Promise(res=>{ const un=this.auth.onAuthStateChanged(u=>{ if(u){ un(); res(u) } else this.auth.signInAnonymously().catch(()=>{ un(); res(null) }) }) });
+        if(!this.user) throw new Error('auth');
+        this.mode='fb';
+      }catch(e){ this.mode='fb-error' }
     }
   },
+  isFb(){ return this.mode==='fb' },
   lsKey(c){ return 'sawa-local-'+c },
   readLocal(c){ try{ return JSON.parse(lsGet(this.lsKey(c))||'[]') }catch(e){ return [] } },
   writeLocal(c,rows){ lsSet(this.lsKey(c), JSON.stringify(rows)); (this.listeners[c]||[]).forEach(f=>f(rows)) },
@@ -189,18 +204,25 @@ const Store = {
     if(this.mode==='db'){
       return this.db.collection(c).onSnapshot(s=>cb(s.docs.map(d=>({id:d.id, ...d.data()}))), e=>onErr&&onErr(e));
     }
+    if(this.mode==='fb'){
+      return this.fs.collection(c).onSnapshot(s=>cb(s.docs.map(d=>({id:d.id, ...d.data()}))), e=>onErr&&onErr(e));
+    }
+    if(this.mode==='fb-error'){ onErr && onErr({code:'unavailable'}); return ()=>{} }
     (this.listeners[c] ||= []).push(cb); cb(this.readLocal(c)); return ()=>{};
   },
   async add(c, data){
     if(this.mode==='db') return (await this.db.collection(c).add(data)).id;
+    if(this.mode==='fb') return (await this.fs.collection(c).add(data)).id;
     const rows=this.readLocal(c); const id='l'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); rows.push({id,...data}); this.writeLocal(c,rows); return id;
   },
   async update(c, id, data){
     if(this.mode==='db') return this.db.collection(c).doc(id).update(data);
+    if(this.mode==='fb') return this.fs.collection(c).doc(id).update(data);
     const rows=this.readLocal(c).map(r=>r.id===id?{...r,...data}:r); this.writeLocal(c,rows);
   },
   async del(c, id){
     if(this.mode==='db') return this.db.collection(c).doc(id).delete();
+    if(this.mode==='fb') return this.fs.collection(c).doc(id).delete();
     this.writeLocal(c, this.readLocal(c).filter(r=>r.id!==id));
   }
 };
@@ -218,7 +240,10 @@ async function boot(){
   await Store.init();
   if(Store.mode==='db'){
     try{ const u = await claude.use('user'); S.isAdmin = u ? await u.isOwner() : false }catch(e){ S.isAdmin=false }
-  } else S.isAdmin = true; // outside Claude: demo on one device
+  } else if(Store.mode==='fb' || Store.mode==='fb-error'){
+    S.isAdmin = !!(Store.user && !Store.user.isAnonymous);
+  } else S.isAdmin = true; // no shared storage: demo on one device
+  window.addEventListener('hashchange', render);
   if(S.isAdmin && lsGet('sawa-mode')!=='player') S.mode='admin';
   const t = setTimeout(()=>{ S.slow=true; render() }, 10000);
   ['staff','attempts','assignments','comments'].forEach(c=>{
@@ -292,6 +317,7 @@ function renderTop(){
   const m=me(); let h=`<div class="brand"><span class="mark">سوا</span><div><b>عيادة سوا التدريبية</b><span>تدريب سوا للأطفال والمراهقين</span></div></div>`;
   if(S.isAdmin){
     h+=`<div class="seg" role="group" aria-label="الوضع"><button data-act="mode" data-v="admin" aria-pressed="${S.mode==='admin'}">الداشبورد</button><button data-act="mode" data-v="player" aria-pressed="${S.mode==='player'}">جرّبي اللعبة</button></div>`;
+    if(Store.isFb()) h+=`<button class="linkbtn" data-act="logout">خروج</button>`;
   } else if(m){
     h+=`<div class="who"><span class="av">${esc(m.name.charAt(0))}</span><span>${esc(m.name)}</span><button class="linkbtn" data-act="switch">مش أنت؟</button></div>`;
   }
@@ -302,6 +328,7 @@ function renderTop(){
 function render(){
   renderTop();
   const main=$('#main');
+  if(Store.isFb() && !S.isAdmin && location.hash==='#admin'){ main.className='wrap narrow'; main.innerHTML=renderLogin(); return }
   if(!S.ready){ main.className='wrap narrow'; main.innerHTML=`<p class="loading">جاري التحميل…${S.slow?'<br>البيانات مش بتوصل لسه. اتأكد من الإنترنت.':''}</p>`; return }
   if(S.mode==='admin'){ main.className='wrap wide'; main.innerHTML=renderAdmin(); bindAdmin(); return }
   main.className='wrap narrow';
@@ -313,7 +340,8 @@ function render(){
 }
 function topNotices(){
   let h='';
-  if(S.dbError) h+=`<div class="notice crit">البيانات المشتركة مش متاحة دلوقتي، فالنتايج مش هتتحفظ. جرّب تفتح الصفحة تاني بعد شوية.</div>`;
+  if(S.dbError && Store.mode!=='fb-error') h+=`<div class="notice crit">البيانات المشتركة مش متاحة دلوقتي، فالنتايج مش هتتحفظ. جرّب تفتح الصفحة تاني بعد شوية.</div>`;
+  if(Store.mode==='fb-error') h+=`<div class="notice crit">مش قادرين نوصل لقاعدة البيانات. اتأكد من الإنترنت وافتح الصفحة تاني.</div>`;
   if(Store.mode==='local') h+=`<div class="notice info">وضع تجربة على الجهاز ده بس: البيانات بتتحفظ في المتصفح ده، ومش بتوصل لحد تاني.</div>`;
   if(S.isAdmin && S.mode==='player') h+=`<div class="notice info">ده وضع التجربة بتاعك: كل الحالات مفتوحة، ومحاولاتك مش بتتحسب في الداشبورد.</div>`;
   return h;
@@ -325,7 +353,16 @@ function renderPick(){
   let h=`<div class="stack">${topNotices()}<div class="card"><h1>أهلًا بيك</h1><p class="muted">اختار اسمك علشان تبدأ. الأسماء بتضيفها المشرفة.</p></div>`;
   if(!list.length) h+=`<div class="notice warn">لسه مافيش أسماء. كلّم المشرفة تضيفك.</div>`;
   else h+=`<div class="names">${list.map(s=>`<button data-act="pick" data-id="${esc(s.id)}"><b>${esc(s.name)}</b><span class="small muted">${LEVELS[s.level]||''}</span></button>`).join('')}</div>`;
+  if(Store.isFb()) h+=`<p class="small" style="text-align:center"><a href="#admin" class="linkbtn">دخول المشرفة</a></p>`;
   return h+`</div>`;
+}
+function renderLogin(){
+  return `<div class="stack"><div class="card"><h1>دخول المشرفة</h1>
+    <div class="field"><label for="lg-email">الإيميل</label><input type="text" id="lg-email" dir="ltr" autocomplete="username"></div>
+    <div class="field"><label for="lg-pass">الباسورد</label><input type="password" id="lg-pass" dir="ltr" autocomplete="current-password"></div>
+    ${S.loginErr?`<div class="notice crit">${esc(S.loginErr)}</div>`:''}
+    <button class="btn" data-act="login">ادخلي</button>
+    <a href="#" class="linkbtn">رجوع للعبة</a></div></div>`;
 }
 
 /* ---------- home ---------- */
@@ -469,6 +506,12 @@ document.addEventListener('click', async e=>{
   const b=e.target.closest('[data-act]'); if(!b || b.disabled) return;
   const a=b.dataset.act, ss=S.session;
   if(a==='mode'){ S.mode=b.dataset.v; lsSet('sawa-mode',S.mode); S.view='home'; render(); window.scrollTo({top:0}); return }
+  if(a==='login'){ const em=$('#lg-email').value.trim(), pw=$('#lg-pass').value; if(!em||!pw) return;
+    b.disabled=true; S.loginErr=null;
+    try{ await Store.auth.signInWithEmailAndPassword(em,pw); location.hash=''; location.reload() }
+    catch(err){ S.loginErr = /network/i.test(err?.code||'') ? 'مافيش إنترنت. جرّبي تاني.' : 'الإيميل أو الباسورد غلط.'; render() }
+    return }
+  if(a==='logout'){ try{ await Store.auth.signOut() }catch(err){} location.hash=''; location.reload(); return }
   if(a==='switch'){ S.meId=null; lsSet('sawa-me',null); S.session=null; S.result=null; render(); return }
   if(a==='pick'){ S.meId=b.dataset.id; lsSet('sawa-me',S.meId); S.view='home'; render(); return }
   if(a==='home'){ S.view='home'; if(S.result){S.session=null;S.result=null} render(); window.scrollTo({top:0}); return }

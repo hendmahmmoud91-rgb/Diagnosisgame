@@ -1,0 +1,24 @@
+rules_version = '2';
+// قواعد الأمان لقاعدة بيانات عيادة سوا التدريبية.
+// قبل ما تنشريها في Firebase: غيّري ADMIN_EMAIL لإيميل حساب المشرفة.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.token.email == 'ADMIN_EMAIL'; }
+
+    // الأسماء والحالات المبعوتة والتعليقات: الكل يقرا، والمشرفة بس تكتب
+    match /staff/{id}       { allow read: if signedIn(); allow write: if isAdmin(); }
+    match /assignments/{id} { allow read: if signedIn(); allow write: if isAdmin(); }
+    match /comments/{id}    { allow read: if signedIn(); allow write: if isAdmin(); }
+
+    // المحاولات: أي حد فاتح اللعبة يضيف محاولة جديدة، ومحدش يعدّلها أو يمسحها غير المشرفة
+    match /attempts/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasAll(['staffId', 'caseId', 'total', 'at'])
+        && request.resource.data.total is int
+        && request.resource.data.total >= 0 && request.resource.data.total <= 100;
+      allow update, delete: if isAdmin();
+    }
+  }
+}
