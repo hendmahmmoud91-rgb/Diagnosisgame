@@ -1,0 +1,655 @@
+<meta charset="utf-8">
+<title>عيادة سوا التدريبية</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@600;700&family=Noto+Sans+Arabic:wght@400;600;700&display=swap">
+<style>
+/* Layout: one column app (player ≤ 600px, supervisor ≤ 1140px). Modern clinic look, single light theme by choice. */
+:root{
+  --bg:#F6F9F8; --surface:#FFFFFF; --sunk:#EEF4F2; --ink:#10231E; --muted:#5B6D67; --line:#D9E4E0;
+  --pri:#0F6E58; --pri-ink:#FFFFFF; --pri-soft:#E1F1EB; --pri-deep:#0B5A48; --acc:#C4532F; --acc-soft:#FBE8E2;
+  --ok:#1E7F4E; --ok-soft:#E2F3EA; --warn:#8F5D00; --warn-soft:#FAF0DC; --crit:#B83A30; --crit-soft:#FAE3E0;
+  --r:10px;
+  --f-display:"Noto Kufi Arabic","Noto Sans Arabic",Tahoma,sans-serif; --f-body:"Noto Sans Arabic",Tahoma,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.75}
+#app{direction:rtl;min-height:100%}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;margin:0;line-height:1.4;text-wrap:balance}
+h1{font-size:1.35rem} h2{font-size:1.12rem} h3{font-size:1rem}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed}
+:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+.muted{color:var(--muted)} .small{font-size:.86rem} .num{font-variant-numeric:tabular-nums}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));margin:0 auto;box-sizing:border-box;width:100%}
+.narrow{max-width:600px} .wide{max-width:1140px}
+
+/* top bar */
+.bar{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.bar .wrap{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-block:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.mark{width:38px;height:38px;border-radius:9px;background:var(--pri);color:var(--pri-ink);display:grid;place-items:center;font-family:var(--f-display);font-size:.95rem}
+.brand b{font-family:var(--f-display);font-size:1rem;display:block;line-height:1.3}
+.brand span{font-size:.78rem;color:var(--muted)}
+.seg{display:flex;background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;border-radius:999px;padding:5px 14px;font-size:.88rem}
+.seg button[aria-pressed="true"]{background:var(--pri);color:var(--pri-ink);font-weight:600}
+.who{display:flex;align-items:center;gap:8px;font-size:.88rem}
+.linkbtn{border:0;background:none;padding:0;color:var(--pri-deep);text-decoration:underline;text-underline-offset:3px;font-size:.86rem}
+
+main{padding-block:20px 64px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 10px;font-size:.78rem;font-weight:600;white-space:nowrap;background:var(--sunk);color:var(--muted)}
+.chip.pri{background:var(--pri-soft);color:var(--pri-deep)} .chip.acc{background:var(--acc-soft);color:var(--acc)}
+.chip.ok{background:var(--ok-soft);color:var(--ok)} .chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.crit{background:var(--crit-soft);color:var(--crit)}
+.btn{border:0;border-radius:8px;padding:10px 16px;background:var(--pri);color:var(--pri-ink);font-weight:700;font-family:var(--f-display);font-size:.92rem}
+.btn:disabled{opacity:.45}
+.btn.ghost{background:var(--surface);border:1px solid var(--line);color:var(--ink)}
+.btn.danger{background:var(--crit)}
+.btn.full{width:100%}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.btnrow .btn{flex:1;min-width:140px}
+label{font-weight:600;font-size:.9rem}
+select,textarea,input[type=text],input[type=date]{width:100%;box-sizing:border-box;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+textarea{min-height:84px;resize:vertical}
+.field{display:flex;flex-direction:column;gap:6px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.notice{border-radius:var(--r);padding:10px 14px;font-size:.9rem}
+.notice.warn{background:var(--warn-soft);color:var(--warn)} .notice.crit{background:var(--crit-soft);color:var(--crit)} .notice.ok{background:var(--ok-soft);color:var(--ok)} .notice.info{background:var(--pri-soft);color:var(--pri-deep)}
+.av{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-display);font-size:.85rem;background:var(--pri-soft);color:var(--pri-deep)}
+.av.k{background:var(--acc-soft);color:var(--acc)} .av.o{background:var(--sunk);color:var(--muted)}
+.track{height:8px;border-radius:99px;background:var(--sunk);overflow:hidden}
+.fill{height:100%;border-radius:99px;background:var(--pri)} .fill.low{background:var(--warn)} .fill.bad{background:var(--crit)}
+.sect{font-family:var(--f-display);font-size:.92rem;color:var(--muted);margin-top:4px}
+
+/* pick name */
+.names{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.names button{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:12px;text-align:start;display:flex;flex-direction:column;gap:2px}
+.names button:hover{border-color:var(--pri)}
+
+/* home */
+.casecard{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:6px;background:var(--surface);text-align:start;width:100%}
+button.casecard:hover{border-color:var(--pri)}
+.casecard.assigned{border:2px solid var(--pri)}
+.casecard.locked{opacity:.55}
+.dbar{display:grid;grid-template-columns:9.5em 1fr 2.4em;align-items:center;gap:8px;font-size:.86rem}
+.comment{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--acc);background:var(--acc-soft);border-radius:var(--r);padding:10px 12px;font-size:.92rem}
+
+/* case file */
+.casehead{display:flex;flex-direction:column;gap:6px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.tabs button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:.86rem;white-space:nowrap}
+.tabs button[aria-selected="true"]{background:var(--pri);border-color:var(--pri);color:var(--pri-ink);font-weight:700}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--crit);margin-inline-start:6px;vertical-align:middle}
+.dot.done{background:var(--ok)}
+.qbtn{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:start;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 12px;font-size:.93rem}
+.qbtn:hover:not(:disabled){border-color:var(--pri)}
+.qbtn:disabled{cursor:default;background:var(--sunk);color:var(--muted)}
+.say{display:flex;gap:8px;align-items:flex-end}
+.bubble{background:var(--sunk);border-radius:14px 14px 14px 4px;padding:8px 12px;font-size:.95rem;min-width:0}
+.bubble .who{display:block;font-size:.75rem;font-weight:700;color:var(--pri-deep)}
+.hint{display:flex;gap:6px;background:var(--ok-soft);color:var(--ok);border-radius:8px;padding:7px 10px;font-size:.86rem}
+.hint b{white-space:nowrap}
+.ref{border:1px dashed var(--muted);border-radius:var(--r);padding:12px 14px;background:var(--surface)}
+.ref .who{display:block;font-size:.76rem;font-weight:700;color:var(--muted)}
+.ethics{border:2px solid var(--warn);background:var(--warn-soft);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px}
+
+/* options */
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:.92rem;background:var(--surface);text-align:start;width:100%}
+.opt::before{content:"";flex:none;width:14px;height:14px;margin-top:5px;border:2px solid var(--line);border-radius:50%;box-sizing:border-box}
+.opt.multi::before{border-radius:3px}
+.opt[aria-pressed="true"]{border-color:var(--pri);background:var(--pri-soft)}
+.opt[aria-pressed="true"]::before{background:var(--pri);border-color:var(--pri)}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)} .opt.right::before{background:var(--ok);border-color:var(--ok)}
+.opt.wrong{border-color:var(--crit);background:var(--crit-soft)} .opt.wrong::before{background:var(--crit);border-color:var(--crit)}
+.opt:disabled{cursor:default;color:var(--ink)}
+.fb{border-radius:8px;padding:9px 12px;font-size:.88rem}
+.fb.ok{background:var(--ok-soft);color:var(--ok)} .fb.bad{background:var(--crit-soft);color:var(--crit)} .fb.wait{background:var(--sunk);color:var(--muted)}
+.fb .src{display:block;font-size:.78rem;opacity:.85;margin-top:2px}
+
+/* report */
+.score{display:flex;align-items:center;gap:14px}
+.ring{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;flex:none}
+.ring span{width:70px;height:70px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font-family:var(--f-display);font-size:1.4rem}
+.axes{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.axis{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column}
+.axis b{font-family:var(--f-display);font-size:1.2rem}
+.list{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
+
+/* supervisor */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.kpi b{font-family:var(--f-display);font-size:1.7rem;line-height:1.3}
+.kpi.alert{border:2px solid var(--crit)} .kpi.alert b{color:var(--crit)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:900px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:start;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.78rem;color:var(--muted);font-weight:600;white-space:nowrap}
+.team{min-width:760px} .team td{white-space:nowrap}
+.casestbl{min-width:860px}
+tr.flag td:first-child{box-shadow:inset -3px 0 0 var(--crit)}
+tr.sel td{background:var(--pri-soft)}
+.attempt{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:.9rem}
+.why{background:var(--sunk);border-radius:6px;padding:8px 10px;white-space:pre-wrap}
+.why .lbl{display:block;font-size:.75rem;font-weight:700;color:var(--muted)}
+.mbar{display:grid;grid-template-columns:1fr 2.4em;gap:8px;align-items:center}
+details summary{cursor:pointer;color:var(--pri-deep);font-size:.86rem;font-weight:600}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 12px;font-size:.82rem}
+.filters button[aria-pressed="true"]{background:var(--pri-soft);border-color:var(--pri);color:var(--pri-deep);font-weight:600}
+.hidden-dx{background:var(--acc-soft);color:var(--acc);border-radius:6px;padding:1px 6px;font-weight:600}
+.loading{padding:60px 0;text-align:center;color:var(--muted)}
+
+@media (prefers-reduced-motion:no-preference){.say,.fb,.hint,.ethics{animation:pop .22s ease-out}@keyframes pop{from{opacity:.3;transform:translateY(-3px)}to{opacity:1;transform:none}}}
+</style>
+
+<div id="app">
+  <header class="bar"><div class="wrap wide" id="topbar">
+    <div class="brand"><span class="mark">سوا</span><div><b>عيادة سوا التدريبية</b><span>تدريب سوا للأطفال والمراهقين</span></div></div>
+  </div></header>
+  <main><div class="wrap narrow" id="main"><p class="loading">جاري التحميل…</p></div></main>
+</div>
+
+<script src="cases.js" charset="utf-8"></script>
+<script>
+document.documentElement.setAttribute('lang','ar');
+const CASES = window.SAWA_CASES || [];
+const DOMAINS = window.SAWA_DOMAINS || {};
+const LEVELS = {beg:'مبتدئ', mid:'متوسط', adv:'متقدم'};
+const RANK = {beg:1, mid:2, adv:3};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const byId = id => CASES.find(c => c.id === id);
+const nowIso = () => new Date().toISOString();
+const PREVIEW = '_preview';
+function lsGet(k){ try{ return localStorage.getItem(k) }catch(e){ return null } }
+function lsSet(k,v){ try{ v==null ? localStorage.removeItem(k) : localStorage.setItem(k,v) }catch(e){} }
+function shuffle(n){ const a=[...Array(n).keys()]; for(let i=n-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
+function fmtDate(iso){ try{ return new Date(iso).toLocaleDateString('ar-EG',{day:'numeric',month:'short'}) }catch(e){ return '' } }
+function ago(iso){ if(!iso) return '–'; const d=Math.floor((Date.now()-new Date(iso))/864e5); return d<=0?'النهارده':d===1?'امبارح':d<7?`من ${d} أيام`:fmtDate(iso) }
+
+/* ---------- storage: shared db inside Claude, browser storage elsewhere ---------- */
+const Store = {
+  mode:'local', db:null, cache:{}, listeners:{},
+  async init(){
+    if(window.claude && typeof claude.use==='function'){
+      try{ const db = await claude.use('db'); if(db){ this.db=db; this.mode='db' } }catch(e){}
+    }
+  },
+  lsKey(c){ return 'sawa-local-'+c },
+  readLocal(c){ try{ return JSON.parse(lsGet(this.lsKey(c))||'[]') }catch(e){ return [] } },
+  writeLocal(c,rows){ lsSet(this.lsKey(c), JSON.stringify(rows)); (this.listeners[c]||[]).forEach(f=>f(rows)) },
+  watch(c, cb, onErr){
+    if(this.mode==='db'){
+      return this.db.collection(c).onSnapshot(s=>cb(s.docs.map(d=>({id:d.id, ...d.data()}))), e=>onErr&&onErr(e));
+    }
+    (this.listeners[c] ||= []).push(cb); cb(this.readLocal(c)); return ()=>{};
+  },
+  async add(c, data){
+    if(this.mode==='db') return (await this.db.collection(c).add(data)).id;
+    const rows=this.readLocal(c); const id='l'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); rows.push({id,...data}); this.writeLocal(c,rows); return id;
+  },
+  async update(c, id, data){
+    if(this.mode==='db') return this.db.collection(c).doc(id).update(data);
+    const rows=this.readLocal(c).map(r=>r.id===id?{...r,...data}:r); this.writeLocal(c,rows);
+  },
+  async del(c, id){
+    if(this.mode==='db') return this.db.collection(c).doc(id).delete();
+    this.writeLocal(c, this.readLocal(c).filter(r=>r.id!==id));
+  }
+};
+
+/* ---------- app state ---------- */
+const S = {
+  ready:false, isAdmin:false, mode:'player', adminView:'team',
+  staff:[], attempts:[], assignments:[], comments:[], loaded:{}, slow:false, dbError:null,
+  meId: lsGet('sawa-me'), view:'home', session:null, result:null, saveState:null,
+  selStaff:null, teamFilter:'all', toast:null
+};
+const me = () => S.meId===PREVIEW ? {id:PREVIEW, name:'تجربة المشرفة', level:'adv'} : S.staff.find(s=>s.id===S.meId);
+
+async function boot(){
+  await Store.init();
+  if(Store.mode==='db'){
+    try{ const u = await claude.use('user'); S.isAdmin = u ? await u.isOwner() : false }catch(e){ S.isAdmin=false }
+  } else S.isAdmin = true; // outside Claude: demo on one device
+  if(S.isAdmin && lsGet('sawa-mode')!=='player') S.mode='admin';
+  const t = setTimeout(()=>{ S.slow=true; render() }, 10000);
+  ['staff','attempts','assignments','comments'].forEach(c=>{
+    Store.watch(c, rows=>{ S[c]=rows; S.loaded[c]=true; if(Object.keys(S.loaded).length===4){ clearTimeout(t); S.slow=false; S.ready=true } render() },
+      e=>{ S.dbError=e; clearTimeout(t); S.ready=true; render() });
+  });
+}
+
+/* ---------- derived data ---------- */
+function attemptsOf(staffId){ return S.attempts.filter(a=>a.staffId===staffId).sort((a,b)=>a.at<b.at?-1:1) }
+function latestPerCase(list){ const m={}; list.forEach(a=>{ if(!m[a.caseId]||m[a.caseId].at<a.at) m[a.caseId]=a }); return m }
+function bestPerCase(list){ const m={}; list.forEach(a=>{ if(!m[a.caseId]||m[a.caseId].total<a.total) m[a.caseId]=a }); return m }
+function domainAvgs(list){
+  const latest=latestPerCase(list), acc={};
+  Object.values(latest).forEach(a=>{ const c=byId(a.caseId); if(!c) return; (acc[c.domain] ||= []).push(a.total) });
+  const out={}; Object.entries(acc).forEach(([d,v])=>out[d]=Math.round(v.reduce((x,y)=>x+y,0)/v.length)); return out;
+}
+function staffStats(s){
+  const list=attemptsOf(s.id), latest=latestPerCase(list), lv=Object.values(latest);
+  const avg = lv.length ? Math.round(lv.reduce((x,a)=>x+a.total,0)/lv.length) : null;
+  const dom=domainAvgs(list); let weak='–', wv=101;
+  Object.entries(dom).forEach(([d,v])=>{ if(v<wv){wv=v;weak=DOMAINS[d]||d} });
+  if(!lv.length) weak='–';
+  return { list, cases:lv.length, avg, weak, safetyMiss:list.filter(a=>!a.safetyDone).length,
+    retries:list.length-lv.length, last:list.length?list[list.length-1].at:null };
+}
+function pendingAssignments(s){
+  return S.assignments.filter(a=>{
+    const applies = a.target==='all' || a.target===s.level || (a.target==='some' && (a.staffIds||[]).includes(s.id));
+    if(!applies) return false;
+    return !S.attempts.some(t=>t.staffId===s.id && t.caseId===a.caseId && t.at>=a.at);
+  });
+}
+
+/* ---------- scoring ---------- */
+function stepScore(step, pick){
+  if(pick==null) return 0;
+  if(!step.multi) return step.opts[pick][1]===1 ? 1 : 0;
+  const correct=step.opts.map((o,i)=>o[1]===1?i:-1).filter(i=>i>=0);
+  const sel=pick||[]; const hit=sel.filter(i=>correct.includes(i)).length, wrong=sel.length-hit;
+  return Math.max(0,(hit-wrong)/correct.length);
+}
+function allQs(c){ return c.tabs.flatMap(t=>t.qs.map(q=>({...q, tab:t}))) }
+function grade(c, ss){
+  const qs=allQs(c), asked=ss.asked;
+  const keys=qs.filter(q=>q.key), info = keys.length ? keys.filter(q=>asked.has(q.id)).length/keys.length : 1;
+  const safetyQs=qs.filter(q=>q.tab.safety), safetyDone = safetyQs.every(q=>asked.has(q.id));
+  const ek=Object.keys(c.ethics||{});
+  const ethics = ek.length ? ek.reduce((s,k)=>s+(ss.ethics[k]!=null ? c.ethics[k].opts[ss.ethics[k]][1] : 0),0)/ek.length : null;
+  const steps = c.steps.map(st=>stepScore(st, ss.steps[st.id]));
+  const reason = steps.reduce((x,y)=>x+y,0)/steps.length;
+  const dxv=c.dx.opts[ss.dx][1], scv=c.scale.opts[ss.scale][1];
+  const dx = dxv*0.8 + scv*0.2;
+  const W = {dx:.35, reason:.25, info:.10, safety:.15, ethics:.15};
+  const parts = {dx, reason, info, safety: safetyDone?1:0, ethics};
+  let sum=0, wsum=0; Object.entries(W).forEach(([k,w])=>{ if(parts[k]!=null){ sum+=parts[k]*w; wsum+=w } });
+  const total=Math.round(100*sum/wsum);
+  const mistakes=[];
+  if(!safetyDone) mistakes.push({code:'safety', label:'فوّت فحص الأمان'});
+  if(dxv<1) mistakes.push({code:'dx:'+c.id, label:`تشخيص غلط في حالة ${c.name}`});
+  c.steps.forEach((st,i)=>{ if(steps[i]<1) mistakes.push({code:`step:${c.id}:${st.id}`, label:`${c.name}: ${st.q}`}) });
+  ek.forEach(k=>{ const v=ss.ethics[k]; if(v==null || c.ethics[k].opts[v][1]<1) mistakes.push({code:`eth:${c.id}:${k}`, label:`${c.name}: ${c.ethics[k].title}`}) });
+  keys.filter(q=>!asked.has(q.id)).forEach(q=>mistakes.push({code:`q:${c.id}:${q.id}`, label:`${c.name}: ماسألش "${q.q}"`}));
+  const pct=v=>v==null?null:Math.round(v*100);
+  return { total, axes:{dx:pct(dx), reason:pct(reason), info:pct(info), safety:pct(parts.safety), ethics:pct(ethics)},
+    dxOk: dxv===1, dxScore:dxv, scaleOk: scv===1, safetyDone, steps, mistakes };
+}
+
+/* ---------- top bar ---------- */
+function renderTop(){
+  const m=me(); let h=`<div class="brand"><span class="mark">سوا</span><div><b>عيادة سوا التدريبية</b><span>تدريب سوا للأطفال والمراهقين</span></div></div>`;
+  if(S.isAdmin){
+    h+=`<div class="seg" role="group" aria-label="الوضع"><button data-act="mode" data-v="admin" aria-pressed="${S.mode==='admin'}">الداشبورد</button><button data-act="mode" data-v="player" aria-pressed="${S.mode==='player'}">جرّبي اللعبة</button></div>`;
+  } else if(m){
+    h+=`<div class="who"><span class="av">${esc(m.name.charAt(0))}</span><span>${esc(m.name)}</span><button class="linkbtn" data-act="switch">مش أنت؟</button></div>`;
+  }
+  $('#topbar').innerHTML=h;
+}
+
+/* ---------- main render ---------- */
+function render(){
+  renderTop();
+  const main=$('#main');
+  if(!S.ready){ main.className='wrap narrow'; main.innerHTML=`<p class="loading">جاري التحميل…${S.slow?'<br>البيانات مش بتوصل لسه. اتأكد من الإنترنت.':''}</p>`; return }
+  if(S.mode==='admin'){ main.className='wrap wide'; main.innerHTML=renderAdmin(); bindAdmin(); return }
+  main.className='wrap narrow';
+  if(S.isAdmin && S.meId!==PREVIEW){ S.meId=PREVIEW }
+  if(!me()){ main.innerHTML=renderPick(); bind(); return }
+  const v=S.view;
+  main.innerHTML = v==='case'?renderCase() : v==='decide'?renderDecide() : v==='report'?renderReport() : renderHome();
+  bind();
+}
+function topNotices(){
+  let h='';
+  if(S.dbError) h+=`<div class="notice crit">البيانات المشتركة مش متاحة دلوقتي، فالنتايج مش هتتحفظ. جرّب تفتح الصفحة تاني بعد شوية.</div>`;
+  if(Store.mode==='local') h+=`<div class="notice info">وضع تجربة على الجهاز ده بس: البيانات بتتحفظ في المتصفح ده، ومش بتوصل لحد تاني.</div>`;
+  if(S.isAdmin && S.mode==='player') h+=`<div class="notice info">ده وضع التجربة بتاعك: كل الحالات مفتوحة، ومحاولاتك مش بتتحسب في الداشبورد.</div>`;
+  return h;
+}
+
+/* ---------- pick name ---------- */
+function renderPick(){
+  const list=S.staff.filter(s=>!s.archived).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+  let h=`<div class="stack">${topNotices()}<div class="card"><h1>أهلًا بيك</h1><p class="muted">اختار اسمك علشان تبدأ. الأسماء بتضيفها المشرفة.</p></div>`;
+  if(!list.length) h+=`<div class="notice warn">لسه مافيش أسماء. كلّم المشرفة تضيفك.</div>`;
+  else h+=`<div class="names">${list.map(s=>`<button data-act="pick" data-id="${esc(s.id)}"><b>${esc(s.name)}</b><span class="small muted">${LEVELS[s.level]||''}</span></button>`).join('')}</div>`;
+  return h+`</div>`;
+}
+
+/* ---------- home ---------- */
+function renderHome(){
+  const m=me(), preview=m.id===PREVIEW, list=preview?[]:attemptsOf(m.id), best=bestPerCase(list), latest=latestPerCase(list);
+  const avail=CASES.filter(c=>preview || RANK[c.level]<=RANK[m.level]), locked=CASES.length-avail.length;
+  let h=`<div class="stack">${topNotices()}<div class="row"><h1>أهلًا يا ${esc(m.name.split(' ')[0])}</h1><span class="chip pri">مستوى ${LEVELS[m.level]}</span></div>`;
+  const doneN=avail.filter(c=>best[c.id]).length;
+  h+=`<div class="card"><div class="row small"><span>خلّصت ${doneN} من ${avail.length} حالات متاحة ليك</span><span class="num">${avail.length?Math.round(doneN/avail.length*100):0}%</span></div><div class="track"><div class="fill" style="width:${avail.length?doneN/avail.length*100:0}%"></div></div></div>`;
+  if(S.session && !S.result){ const c=byId(S.session.caseId); h+=`<div class="notice warn row"><span>عندك حالة ${esc(c.name)} لسه ماخلصتش.</span><button class="btn" data-act="resume">كمّل</button></div>` }
+  if(!preview){
+    const cm=S.comments.filter(x=>x.staffId===m.id).sort((a,b)=>a.at<b.at?1:-1).slice(0,3);
+    cm.forEach(x=>{ const a=S.attempts.find(t=>t.id===x.attemptId), c=a&&byId(a.caseId);
+      h+=`<div class="comment"><span class="av">م</span><div><b>تعليق من المشرفة${c?` على حالة ${esc(c.name)}`:''}</b> <span class="small muted">${ago(x.at)}</span><br>${esc(x.text)}</div></div>` });
+    const pend=pendingAssignments(m);
+    if(pend.length){ h+=`<span class="sect">مطلوبة منك</span>`;
+      pend.forEach(a=>{ const c=byId(a.caseId); if(!c) return; const late=a.due && a.due < new Date().toISOString().slice(0,10);
+        h+=`<button class="casecard assigned" data-act="start" data-id="${c.id}"><div class="row"><h3>${esc(c.name)}، ${esc(c.age)}</h3>${a.due?`<span class="chip ${late?'crit':'warn'}">${late?'فات ميعادها':'قبل'} ${fmtDate(a.due)}</span>`:''}</div><p class="small">"${esc(c.complaint)}"</p></button>` }) }
+  }
+  ['beg','mid','adv'].forEach(L=>{
+    const cs=avail.filter(c=>c.level===L); if(!cs.length) return;
+    h+=`<span class="sect">حالات ${LEVELS[L]}</span>`;
+    cs.forEach(c=>{ const b=best[c.id], n=list.filter(a=>a.caseId===c.id).length;
+      h+=`<button class="casecard" data-act="start" data-id="${c.id}"><div class="row"><h3>${esc(c.name)}، ${esc(c.age)}</h3>${b?`<span class="chip ${b.total>=70?'ok':'warn'} num">${b.total}${n>1?` · ${n} محاولات`:''}</span>`:'<span class="chip pri">جديدة</span>'}</div><p class="small muted">"${esc(c.complaint)}"</p></button>` });
+  });
+  if(locked) h+=`<div class="casecard locked"><div class="row"><h3>${locked} حالات في مستويات أعلى</h3><span class="chip">مقفولة</span></div><p class="small muted">المشرفة بتفتحها لما مستواك يتغير.</p></div>`;
+  if(!preview && Object.keys(latest).length){
+    const dom=domainAvgs(list);
+    h+=`<span class="sect">مستواك في كل مجال</span><div class="card">${Object.entries(dom).map(([d,v])=>`<div class="dbar"><span>${DOMAINS[d]}</span><div class="track"><div class="fill ${v<60?'low':''}" style="width:${v}%"></div></div><span class="num">${v}</span></div>`).join('')}</div>`;
+    const safeAll=list.filter(a=>a.safetyDone).length;
+    const badges=[];
+    if(list.length) badges.push(['acc','أول حالة']);
+    if(safeAll>=5) badges.push(['ok','عين الأمان: 5 حالات من غير ما تفوّت فحص الأمان']);
+    if(list.some(a=>a.total>=90)) badges.push(['pri','درجة 90 أو أكتر']);
+    if(avail.filter(c=>c.level===m.level).every(c=>best[c.id])) badges.push(['ok',`خلّصت مستوى ${LEVELS[m.level]}`]);
+    h+=`<span class="sect">شاراتك</span><div class="btnrow" style="gap:6px">${badges.map(b=>`<span class="chip ${b[0]}">${b[1]}</span>`).join('')}</div>`;
+  }
+  return h+`</div>`;
+}
+
+/* ---------- case ---------- */
+function newSession(caseId){
+  const c=byId(caseId), order={};
+  c.steps.forEach(st=>order[st.id]=shuffle(st.opts.length));
+  order.dx=shuffle(c.dx.opts.length); order.scale=shuffle(c.scale.opts.length);
+  S.session={caseId, asked:new Set(), ethics:{}, steps:{}, locked:{}, dx:null, scale:null, why:'', tab:'ref', order, safetyWarn:false, startedAt:nowIso()};
+  S.result=null; S.saveState=null; S.view='case';
+}
+function renderCase(){
+  const ss=S.session, c=byId(ss.caseId), lv=S.isAdmin?c.level:me().level;
+  const hints = c.level==='beg', fbNow = c.level!=='adv';
+  const tabs=[{id:'ref',name:'الإحالة',qs:[]}, ...c.tabs];
+  const done=t=>!t.qs.length || (t.safety ? t.qs.every(q=>ss.asked.has(q.id)) : t.qs.some(q=>ss.asked.has(q.id)));
+  const safeTab=c.tabs.find(t=>t.safety), safetyDone=safeTab.qs.every(q=>ss.asked.has(q.id));
+  let h=`<div class="stack"><div class="casehead"><div class="row"><h1>${esc(c.name)} · ${esc(c.age)}</h1><span class="chip pri">${esc(c.grade)}</span></div>
+    <div class="row small"><span class="muted">سألت ${ss.asked.size} سؤال</span><span class="chip ${safetyDone?'ok':'crit'}">${safetyDone?'فحص الأمان اتعمل':'فحص الأمان لسه'}</span></div></div>`;
+  h+=`<div class="tabs" role="tablist">${tabs.map(t=>`<button role="tab" data-act="tab" data-id="${t.id}" aria-selected="${ss.tab===t.id}">${esc(t.name)}${t.id!=='ref'?`<span class="dot ${done(t)?'done':''}"></span>`:''}</button>`).join('')}</div>`;
+  const t=tabs.find(x=>x.id===ss.tab);
+  h+=`<div class="stack" style="gap:10px">`;
+  if(t.id==='ref') h+=`<div class="ref"><span class="who">ورقة الإحالة · ${esc(c.ref.from)}</span>${esc(c.ref.text)}</div><p class="small muted">افتح الأقسام اللي فوق واختار تسأل إيه. النقطة الحمرا معناها إن القسم لسه ما اتعملش، وفحص الأمان لازم كل أسئلته تتسأل.</p>`;
+  if(t.safety) h+=`<p class="small muted">فحص الأمان: اسأل كل الأسئلة هنا.</p>`;
+  t.qs.forEach(q=>{
+    const on=ss.asked.has(q.id);
+    h+=`<button class="qbtn" data-act="ask" data-id="${q.id}" ${on?'disabled':''}><span>${esc(q.q)}</span><span class="chip ${on?'ok':'pri'}">${on?'اتسأل':'اسأل'}</span></button>`;
+    if(on){
+      h+=`<div class="say"><span class="av ${q.av||''}">${esc(q.who.replace('ال','').charAt(0))}</span><div class="bubble"><span class="who">${esc(q.who)}</span>${esc(q.a)}</div></div>`;
+      if(hints && q.hint) h+=`<div class="hint"><b>تلميح:</b><span>${esc(q.hint)}</span></div>`;
+      if(q.ethics){ const e=c.ethics[q.ethics], pick=ss.ethics[q.ethics];
+        h+=`<div class="ethics"><b>موقف: ${esc(e.title)}</b><span class="small">هتتصرف إزاي؟</span><div class="opts">${e.opts.map((o,i)=>`<button class="opt ${pick!=null&&fbNow?(i===pick?(o[1]===1?'right':'wrong'):''):''}" aria-pressed="${pick===i}" data-act="ethic" data-k="${q.ethics}" data-i="${i}" ${pick!=null?'disabled':''}>${esc(o[0])}</button>`).join('')}</div>`;
+        if(pick!=null) h+= fbNow ? `<div class="fb ${e.opts[pick][1]===1?'ok':'bad'}">${esc(e.opts[pick][1]===1?e.ok:e.bad)}<span class="src">${esc(e.src)}</span></div>` : `<div class="fb wait">اتسجل اختيارك. هتعرف إذا كان صح في التقرير.</div>`;
+        h+=`</div>`; }
+    }
+  });
+  h+=`</div>`;
+  if(ss.safetyWarn && !safetyDone) h+=`<div class="notice crit stack" style="gap:8px"><b>لسه ما خلّصتش فحص الأمان.</b><span>لو كمّلت كده هتاخد صفر في محور الأمان، وده بيظهر للمشرفة.</span><div class="btnrow"><button class="btn" data-act="tab" data-id="${safeTab.id}">ارجع لفحص الأمان</button><button class="btn ghost" data-act="todecide" data-force="1">كمّل برضه</button></div></div>`;
+  h+=`<div class="btnrow"><button class="btn" data-act="todecide">خلّصت، روح للقرار</button><button class="btn ghost" data-act="home">الرئيسية</button></div></div>`;
+  return h;
+}
+
+/* ---------- decide ---------- */
+function renderDecide(){
+  const ss=S.session, c=byId(ss.caseId), fbNow=c.level!=='adv';
+  let h=`<div class="stack"><div class="row"><h1>القرار · ${esc(c.name)}</h1><button class="linkbtn" data-act="back">ارجع لملف الحالة</button></div>`;
+  if(!fbNow) h+=`<p class="small muted">مستوى متقدم: التصحيح هيظهر في التقرير في الآخر.</p>`;
+  c.steps.forEach((st,si)=>{
+    const pick=ss.steps[st.id], locked=fbNow && ss.locked[st.id];
+    h+=`<div class="card"><h3>${si+1}. ${esc(st.q)}${st.multi?' <span class="small muted">(اختار كل اللي ينطبق)</span>':''}</h3><div class="opts">`;
+    ss.order[st.id].forEach(i=>{
+      const sel = st.multi ? (pick||[]).includes(i) : pick===i;
+      let cls = st.multi?'opt multi':'opt';
+      if(locked){ const good=st.opts[i][1]===1; if(sel) cls+= good?' right':' wrong'; else if(st.multi && good) cls+=' right' }
+      h+=`<button class="${cls}" aria-pressed="${sel}" data-act="step" data-s="${st.id}" data-i="${i}" ${locked?'disabled':''}>${esc(st.opts[i][0])}</button>`;
+    });
+    h+=`</div>`;
+    if(st.multi && fbNow && !locked) h+=`<button class="btn ghost" data-act="lock" data-s="${st.id}" ${(pick||[]).length?'':'disabled'}>تأكيد</button>`;
+    if(locked){ const ok=stepScore(st,pick)===1; h+=`<div class="fb ${ok?'ok':'bad'}">${esc(ok?st.ok:st.bad)}<span class="src">${esc(st.src)}</span></div>` }
+    h+=`</div>`;
+  });
+  h+=`<div class="card"><h3>${c.steps.length+1}. التشخيص المبدئي</h3><div class="opts">${ss.order.dx.map(i=>`<button class="opt" aria-pressed="${ss.dx===i}" data-act="dx" data-i="${i}">${esc(c.dx.opts[i][0])}</button>`).join('')}</div>
+    <div class="field"><label for="why">ليه؟ اكتب سبب اختيارك في سطرين</label><textarea id="why" placeholder="مثلًا: البداية من إمتى، وفي كام بيئة، واستبعدت إيه…">${esc(ss.why)}</textarea></div></div>`;
+  h+=`<div class="card"><h3>${c.steps.length+2}. المقياس أو الخطوة الجاية</h3><div class="opts">${ss.order.scale.map(i=>`<button class="opt" aria-pressed="${ss.scale===i}" data-act="scale" data-i="${i}">${esc(c.scale.opts[i][0])}</button>`).join('')}</div></div>`;
+  const miss=[]; c.steps.forEach((st,i)=>{ const p=ss.steps[st.id]; if(p==null||(st.multi&&!p.length)) miss.push(`الخطوة ${i+1}`); else if(st.multi&&fbNow&&!ss.locked[st.id]) miss.push(`تأكيد الخطوة ${i+1}`) });
+  if(ss.dx==null) miss.push('التشخيص'); if(!ss.why.trim()) miss.push('خانة "ليه؟"'); if(ss.scale==null) miss.push('المقياس');
+  h+= miss.length ? `<p class="small muted">ناقص: ${miss.join('، ')}</p>` : '';
+  h+=`<button class="btn full" data-act="submit" ${miss.length?'disabled':''}>سلّم الحالة</button></div>`;
+  return h;
+}
+
+/* ---------- report ---------- */
+function renderReport(){
+  const r=S.result, c=byId(r.caseId), ss=S.session, g=r.g;
+  const col = g.total>=75?'var(--ok)':g.total>=55?'var(--warn)':'var(--crit)';
+  let h=`<div class="stack"><div class="score"><div class="ring" style="background:conic-gradient(${col} 0 ${g.total}%,var(--sunk) ${g.total}% 100%)"><span class="num">${g.total}</span></div><div><h1>حالة ${esc(c.name)}</h1><p class="small muted">المحاولة رقم ${r.n}</p></div></div>`;
+  if(S.saveState==='saving') h+=`<div class="notice info">بنحفظ النتيجة…</div>`;
+  if(S.saveState==='error') h+=`<div class="notice crit row"><span>النتيجة ماتحفظتش.</span><button class="btn" data-act="resave">جرّب تاني</button></div>`;
+  if(S.saveState==='saved') h+=`<div class="notice ok">النتيجة اتحفظت، والمشرفة هتشوفها.</div>`;
+  const ax=[['التشخيص',g.axes.dx],['التفكير الإكلينيكي',g.axes.reason],['جمع المعلومات',g.axes.info],['الأمان',g.axes.safety],['الأخلاقيات',g.axes.ethics]];
+  h+=`<div class="axes">${ax.filter(a=>a[1]!=null).map(a=>`<div class="axis"><span class="small muted">${a[0]}</span><b class="num" style="color:${a[1]>=75?'var(--ok)':a[1]>=50?'var(--warn)':'var(--crit)'}">${a[1]}</b></div>`).join('')}</div>`;
+  const dxPick=c.dx.opts[ss.dx], right=c.dx.opts.find(o=>o[1]===1);
+  h+=`<div class="card"><h3>التشخيص</h3><p><span class="muted">اخترت:</span> ${esc(dxPick[0])} <span class="chip ${g.dxOk?'ok':g.dxScore>0?'warn':'crit'}">${g.dxOk?'صح':g.dxScore>0?'نص صح':'غلط'}</span></p>${g.dxOk?'':`<p><span class="muted">الأقرب:</span> <b>${esc(right[0])}</b></p>`}<p class="small">${esc(c.dx.explain)}</p>
+    <p class="small"><span class="muted">المقياس:</span> ${esc(c.scale.opts[ss.scale][0])} <span class="chip ${g.scaleOk?'ok':'warn'}">${g.scaleOk?'مناسب':'الأنسب: '+esc(c.scale.opts.find(o=>o[1]===1)[0])}</span></p></div>`;
+  const good=[], bad=[];
+  if(g.safetyDone) good.push('عملت فحص الأمان كامل'); else bad.push('ماخلّصتش فحص الأمان. ده أول حاجة لازم تتعمل في أي حالة (ص 21).');
+  c.steps.forEach((st,i)=>{ (g.steps[i]===1?good:bad).push(`${st.q}: ${g.steps[i]===1?st.ok:st.bad} (${st.src})`) });
+  Object.entries(c.ethics||{}).forEach(([k,e])=>{ const p=ss.ethics[k];
+    if(p==null) bad.push(`ماوصلتش لموقف "${e.title}" لأنك ماسألتش السؤال اللي بيطلّعه.`);
+    else (e.opts[p][1]===1?good:bad).push(`${e.title}: ${e.opts[p][1]===1?e.ok:e.bad} (${e.src})`) });
+  const missed=allQs(c).filter(q=>q.key && !ss.asked.has(q.id));
+  if(missed.length) bad.push(`أسئلة أساسية ماسألتهاش: ${missed.map(q=>'"'+q.q+'"').join('، ')}`);
+  if(good.length) h+=`<span class="sect">عملت كويس في</span><ul class="list">${good.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+  if(bad.length) h+=`<span class="sect">محتاج تراجع</span><ul class="list">${bad.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+  h+=`<div class="card"><span class="small muted">الدرس الأساسي في الحالة دي</span><b>${esc(c.lesson)}</b><span class="small muted">صفحات الدليل: ${esc(c.pages)}</span></div>`;
+  h+=`<div class="btnrow"><button class="btn" data-act="start" data-id="${c.id}">عيد الحالة</button><button class="btn ghost" data-act="home">الرئيسية</button></div>`;
+  if(me().id!==PREVIEW) h+=`<p class="small muted">لو عدت الحالة، المشرفة هتشوف المحاولتين.</p>`;
+  return h+`</div>`;
+}
+
+/* ---------- player events ---------- */
+function bind(){}
+document.addEventListener('click', async e=>{
+  const b=e.target.closest('[data-act]'); if(!b || b.disabled) return;
+  const a=b.dataset.act, ss=S.session;
+  if(a==='mode'){ S.mode=b.dataset.v; lsSet('sawa-mode',S.mode); S.view='home'; render(); window.scrollTo({top:0}); return }
+  if(a==='switch'){ S.meId=null; lsSet('sawa-me',null); S.session=null; S.result=null; render(); return }
+  if(a==='pick'){ S.meId=b.dataset.id; lsSet('sawa-me',S.meId); S.view='home'; render(); return }
+  if(a==='home'){ S.view='home'; if(S.result){S.session=null;S.result=null} render(); window.scrollTo({top:0}); return }
+  if(a==='resume'){ S.view='case'; render(); return }
+  if(a==='start'){ newSession(b.dataset.id); render(); window.scrollTo({top:0}); return }
+  if(a==='tab'){ ss.tab=b.dataset.id; ss.safetyWarn=false; render(); return }
+  if(a==='ask'){ ss.asked.add(b.dataset.id); render(); return }
+  if(a==='ethic'){ if(ss.ethics[b.dataset.k]==null){ ss.ethics[b.dataset.k]=+b.dataset.i; render() } return }
+  if(a==='todecide'){ const c=byId(ss.caseId), st=c.tabs.find(t=>t.safety); if(!b.dataset.force && !st.qs.every(q=>ss.asked.has(q.id))){ ss.safetyWarn=true; render(); return } S.view='decide'; render(); window.scrollTo({top:0}); return }
+  if(a==='back'){ S.view='case'; render(); return }
+  if(a==='step'){ const c=byId(ss.caseId), st=c.steps.find(x=>x.id===b.dataset.s), i=+b.dataset.i, fbNow=c.level!=='adv';
+    if(st.multi){ const cur=new Set(ss.steps[st.id]||[]); cur.has(i)?cur.delete(i):cur.add(i); ss.steps[st.id]=[...cur] }
+    else { ss.steps[st.id]=i; if(fbNow) ss.locked[st.id]=true }
+    render(); return }
+  if(a==='lock'){ ss.locked[b.dataset.s]=true; render(); return }
+  if(a==='dx'){ ss.dx=+b.dataset.i; render(); return }
+  if(a==='scale'){ ss.scale=+b.dataset.i; render(); return }
+  if(a==='submit'){ submit(); return }
+  if(a==='resave'){ save(); return }
+});
+document.addEventListener('input', e=>{
+  if(e.target.id==='why' && S.session){ S.session.why=e.target.value;
+    const btn=document.querySelector('[data-act="submit"]'); const c=byId(S.session.caseId), ss=S.session, fbNow=c.level!=='adv';
+    const ready = c.steps.every(st=>{ const p=ss.steps[st.id]; return p!=null && (!st.multi || (p.length && (!fbNow || ss.locked[st.id]))) }) && ss.dx!=null && ss.scale!=null && ss.why.trim();
+    if(btn) btn.disabled=!ready;
+  }
+});
+function submit(){
+  const ss=S.session, c=byId(ss.caseId), m=me();
+  const g=grade(c, ss);
+  const n = m.id===PREVIEW ? 1 : S.attempts.filter(x=>x.staffId===m.id && x.caseId===c.id).length+1;
+  S.result={caseId:c.id, g, n};
+  S.view='report'; window.scrollTo({top:0});
+  if(m.id===PREVIEW){ S.saveState=null; render(); return }
+  save();
+}
+async function save(){
+  const ss=S.session, c=byId(ss.caseId), m=me(), r=S.result, g=r.g;
+  const doc={ staffId:m.id, staffName:m.name, level:m.level, caseId:c.id, n:r.n, at:nowIso(), startedAt:ss.startedAt,
+    total:g.total, axes:g.axes, dx:c.dx.opts[ss.dx][0], dxOk:g.dxOk, dxScore:g.dxScore, scale:c.scale.opts[ss.scale][0], scaleOk:g.scaleOk,
+    why:ss.why.trim().slice(0,2000), safetyDone:g.safetyDone, asked:[...ss.asked], ethics:ss.ethics, steps:ss.steps,
+    mistakes:g.mistakes.map(x=>x.code), mistakeLabels:g.mistakes.map(x=>x.label) };
+  S.saveState='saving'; render();
+  try{ await Store.add('attempts', doc); S.saveState='saved' }catch(e){ S.saveState='error' }
+  render();
+}
+
+/* =================== supervisor =================== */
+function renderAdmin(){
+  let h=`<div class="stack">${topNotices()}<div class="row"><h1>داشبورد المشرفة</h1><div class="seg" role="group" aria-label="أقسام الداشبورد">
+    <button data-adm="view" data-v="team" aria-pressed="${S.adminView==='team'}">الفريق</button>
+    <button data-adm="view" data-v="cases" aria-pressed="${S.adminView==='cases'}">الحالات</button>
+    <button data-adm="view" data-v="roster" aria-pressed="${S.adminView==='roster'}">الأسماء</button></div></div>`;
+  if(S.toast) h+=`<div class="notice ${S.toast[0]}">${esc(S.toast[1])}</div>`;
+  h += S.adminView==='cases'?admCases() : S.adminView==='roster'?admRoster() : admTeam();
+  return h+`</div>`;
+}
+function admTeam(){
+  const staff=S.staff.filter(s=>!s.archived), stats=staff.map(s=>({s, st:staffStats(s)}));
+  const week=Date.now()-7*864e5, active=stats.filter(x=>x.st.last && new Date(x.st.last)>week).length;
+  const avgs=stats.filter(x=>x.st.avg!=null), avg=avgs.length?Math.round(avgs.reduce((a,x)=>a+x.st.avg,0)/avgs.length):null;
+  const unsafe=stats.filter(x=>x.st.safetyMiss>0).length;
+  const cnt=L=>staff.filter(s=>s.level===L).length;
+  if(!staff.length) return `<div class="card"><h2>ابدئي بإضافة أسماء الفريق</h2><p class="muted">من قسم "الأسماء" ضيفي كل أخصائي ومستواه. بعدها ابعتيلهم لينك الصفحة دي، وكل واحد يختار اسمه ويبدأ.</p><button class="btn" data-adm="view" data-v="roster" style="align-self:flex-start">روحي للأسماء</button></div>`;
+  let h=`<div class="kpis">
+    <div class="kpi"><span class="small muted">أخصائيين</span><b class="num">${staff.length}</b><span class="small muted">${cnt('beg')} مبتدئ · ${cnt('mid')} متوسط · ${cnt('adv')} متقدم</span></div>
+    <div class="kpi"><span class="small muted">لعبوا آخر 7 أيام</span><b class="num">${active}</b><span class="small muted">${staff.length-active} ما دخلوش</span></div>
+    <div class="kpi"><span class="small muted">متوسط الدرجات</span><b class="num">${avg??'–'}</b><span class="small muted">آخر محاولة في كل حالة</span></div>
+    <div class="kpi ${unsafe?'alert':''}"><span class="small muted">فوّتوا فحص الأمان</span><b class="num">${unsafe}</b><span class="small muted">${unsafe?'محتاجين متابعة':'كله تمام'}</span></div></div>`;
+  const rows=stats.filter(x=>S.teamFilter==='all'||x.s.level===S.teamFilter).sort((a,b)=>a.s.name.localeCompare(b.s.name,'ar'));
+  if(!S.selStaff || !staff.find(s=>s.id===S.selStaff)) S.selStaff = (stats.find(x=>x.st.list.length)||stats[0]).s.id;
+  h+=`<div class="grid2"><div class="card"><div class="row"><h2>الفريق</h2><div class="filters">${[['all','الكل'],['beg','مبتدئ'],['mid','متوسط'],['adv','متقدم']].map(f=>`<button data-adm="filter" data-v="${f[0]}" aria-pressed="${S.teamFilter===f[0]}">${f[1]}</button>`).join('')}</div></div>
+    <p class="small muted">دوسي على أي اسم علشان تشوفي محاولاته وخانة "ليه؟" وتعلّقي.</p>
+    <div class="tablewrap"><table class="team"><thead><tr><th>الاسم</th><th>المستوى</th><th>حالات</th><th>المتوسط</th><th>أضعف مجال</th><th>فحص الأمان</th><th>إعادات</th><th>آخر دخول</th></tr></thead><tbody>
+    ${rows.map(({s,st})=>`<tr class="${st.safetyMiss?'flag':''} ${s.id===S.selStaff?'sel':''}"><td><button class="linkbtn" style="font-weight:700;font-size:.9rem" data-adm="sel" data-id="${esc(s.id)}">${esc(s.name)}</button></td><td>${LEVELS[s.level]}</td><td class="num">${st.cases}</td><td class="num">${st.avg??'–'}</td><td>${esc(st.weak)}</td>
+      <td>${st.safetyMiss?`<span class="chip crit">فوّت ${st.safetyMiss}</span>`:st.cases?'<span class="chip ok">تمام</span>':'–'}</td><td class="num">${st.retries||'–'}</td><td>${st.last?ago(st.last):'<span class="chip warn">ما دخلش</span>'}</td></tr>`).join('')}
+    </tbody></table></div><div class="btnrow"><button class="btn ghost" data-adm="export" style="flex:0 1 auto">تصدير Excel</button></div></div>`;
+  h+=`<div class="card">${admDetail()}</div></div>`;
+  h+=`<div class="grid2"><div class="card"><h2>أكتر غلطات الفريق</h2>${admMistakes()}</div><div class="card"><h2>ابعتي حالة</h2>${assignForm()}</div></div>`;
+  return h;
+}
+function admDetail(){
+  const s=S.staff.find(x=>x.id===S.selStaff); if(!s) return '';
+  const list=attemptsOf(s.id).slice().reverse();
+  let h=`<div class="row"><h2>${esc(s.name)}</h2><span class="chip pri">${LEVELS[s.level]}</span></div>`;
+  if(!list.length) return h+`<p class="muted">لسه مالعبش أي حالة.</p>`;
+  list.forEach(a=>{ const c=byId(a.caseId); if(!c) return;
+    const cms=S.comments.filter(x=>x.attemptId===a.id).sort((x,y)=>x.at<y.at?-1:1);
+    h+=`<div class="attempt"><div class="row"><b>${esc(c.name)} · المحاولة ${a.n}</b><span class="chip ${a.total>=75?'ok':a.total>=55?'warn':'crit'} num">${a.total}</span></div>
+      <div class="row small"><span class="muted">${fmtDate(a.at)}</span><span>${a.safetyDone?'<span class="chip ok">فحص الأمان تمام</span>':'<span class="chip crit">فوّت فحص الأمان</span>'}</span></div>
+      <span class="small"><span class="muted">اختار:</span> ${esc(a.dx)} <span class="chip ${a.dxOk?'ok':a.dxScore>0?'warn':'crit'}">${a.dxOk?'صح':a.dxScore>0?'نص صح':'غلط'}</span></span>
+      <div class="why"><span class="lbl">ليه؟</span>${esc(a.why)}</div>
+      ${(a.mistakeLabels||[]).length?`<details><summary>الغلطات (${a.mistakeLabels.length})</summary><ul class="list small">${a.mistakeLabels.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></details>`:''}
+      ${cms.map(x=>`<div class="comment small"><span class="av">م</span><div>${esc(x.text)} <span class="muted">· ${ago(x.at)}</span></div></div>`).join('')}
+      <details><summary>علّقي على المحاولة دي</summary><div class="field" style="margin-top:6px"><textarea id="cm-${esc(a.id)}" placeholder="تعليقك هيظهرله في الصفحة الرئيسية"></textarea><button class="btn" data-adm="comment" data-id="${esc(a.id)}" data-s="${esc(s.id)}" style="align-self:flex-start">ابعتي التعليق</button></div></details></div>`; });
+  return h;
+}
+function admMistakes(){
+  const latest={}; S.attempts.forEach(a=>{ if(a.staffId===PREVIEW) return; const k=a.staffId+'|'+a.caseId; if(!latest[k]||latest[k].at<a.at) latest[k]=a });
+  const agg={}; Object.values(latest).forEach(a=>(a.mistakes||[]).forEach((code,i)=>{ (agg[code] ||= {label:(a.mistakeLabels||[])[i]||code, who:new Set()}).who.add(a.staffId) }));
+  const top=Object.values(agg).sort((x,y)=>y.who.size-x.who.size).slice(0,7);
+  if(!top.length) return `<p class="muted">لسه مافيش محاولات.</p>`;
+  const max=top[0].who.size;
+  return `<p class="small muted">عدد الأخصائيين اللي وقعوا في كل غلطة (آخر محاولة في كل حالة)</p>`+top.map(t=>`<div class="stack" style="gap:4px"><span class="small">${esc(t.label)}</span><div class="mbar"><div class="track"><div class="fill low" style="width:${t.who.size/max*100}%"></div></div><span class="num">${t.who.size}</span></div></div>`).join('');
+}
+function assignForm(){
+  const staff=S.staff.filter(s=>!s.archived);
+  let h=`<div class="field"><label for="as-case">الحالة</label><select id="as-case">${CASES.map(c=>`<option value="${c.id}">${esc(c.name)}، ${esc(c.age)} (${LEVELS[c.level]})</option>`).join('')}</select></div>
+  <div class="field"><label for="as-target">لمين</label><select id="as-target"><option value="all">كل الفريق (${staff.length})</option>${['beg','mid','adv'].map(L=>`<option value="${L}">كل المستوى ال${LEVELS[L]} (${staff.filter(s=>s.level===L).length})</option>`).join('')}<option value="some">أسماء معينة…</option></select></div>
+  <div class="field" id="as-some" hidden><span class="small muted">اختاري الأسماء</span>${staff.map(s=>`<label style="font-weight:400"><input type="checkbox" value="${esc(s.id)}" class="as-p"> ${esc(s.name)}</label>`).join('')}</div>
+  <div class="field"><label for="as-due">آخر ميعاد</label><input type="date" id="as-due"></div>
+  <button class="btn" data-adm="assign">ابعتي</button>`;
+  const cur=S.assignments.slice().sort((a,b)=>a.at<b.at?1:-1).slice(0,6);
+  if(cur.length) h+=`<span class="sect">آخر حالات اتبعتت</span>`+cur.map(a=>{ const c=byId(a.caseId); const who=a.target==='all'?'كل الفريق':a.target==='some'?`${(a.staffIds||[]).length} أسماء`:'المستوى ال'+LEVELS[a.target];
+    const targets=S.staff.filter(s=>!s.archived && (a.target==='all'||a.target===s.level||(a.target==='some'&&(a.staffIds||[]).includes(s.id))));
+    const done=targets.filter(s=>S.attempts.some(t=>t.staffId===s.id&&t.caseId===a.caseId&&t.at>=a.at)).length;
+    return `<div class="row small" style="border-top:1px solid var(--line);padding-top:6px"><span>${esc(c?c.name:a.caseId)} → ${who}${a.due?` · قبل ${fmtDate(a.due)}`:''}</span><span class="chip ${done===targets.length?'ok':'warn'} num">خلّص ${done} من ${targets.length}</span><button class="linkbtn" data-adm="unassign" data-id="${esc(a.id)}">إلغاء</button></div>` }).join('');
+  return h;
+}
+function admCases(){
+  let h=`<div class="card"><p class="muted">التشخيص المستهدف بيظهرلك أنتِ بس، والأخصائي بيشوف الشكوى بس. المحتوى في ملف cases.js وممكن يتعدل.</p></div><div class="card"><div class="tablewrap"><table class="casestbl"><thead><tr><th>المستوى</th><th>الحالة</th><th>الشكوى</th><th>التشخيص المستهدف</th><th>الدرس</th><th>الصفحات</th><th>لعبوها</th><th>التشخيص صح</th></tr></thead><tbody>`;
+  CASES.forEach(c=>{ const at=S.attempts.filter(a=>a.caseId===c.id && a.staffId!==PREVIEW), people=new Set(at.map(a=>a.staffId)).size;
+    const latest=latestPerCase(at.map(a=>({...a, caseId:a.staffId}))); const lv=Object.values(latest);
+    const ok=lv.length?Math.round(lv.filter(a=>a.dxOk).length/lv.length*100):null;
+    h+=`<tr><td><b>${LEVELS[c.level]}</b></td><td><b>${esc(c.name)}</b>، ${esc(c.age)}</td><td>"${esc(c.complaint)}"</td><td><span class="hidden-dx">${esc(c.target)}</span></td><td>${esc(c.lesson)}</td><td class="num">${esc(c.pages)}</td><td class="num">${people}</td><td class="num">${ok==null?'–':ok+'%'}</td></tr>` });
+  return h+`</tbody></table></div></div>`;
+}
+function admRoster(){
+  const staff=S.staff.filter(s=>!s.archived).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+  let h=`<div class="card"><h2>إضافة أخصائي</h2><div class="btnrow" style="align-items:flex-end"><div class="field" style="flex:2;min-width:200px"><label for="nm">الاسم</label><input type="text" id="nm" placeholder="مثلًا: سارة عادل" maxlength="60"></div>
+    <div class="field" style="flex:1;min-width:140px"><label for="lv">المستوى</label><select id="lv"><option value="beg">مبتدئ</option><option value="mid">متوسط</option><option value="adv">متقدم</option></select></div>
+    <button class="btn" data-adm="addstaff" style="flex:0 0 auto">إضافة</button></div><p class="small muted">تقدري تحطي كذا اسم مرة واحدة، كل اسم في سطر، في الخانة دي:</p><textarea id="bulk" placeholder="اسم في كل سطر"></textarea><button class="btn ghost" data-adm="bulk" style="align-self:flex-start">إضافة الكل بنفس المستوى</button></div>`;
+  h+=`<div class="card"><h2>الفريق (${staff.length})</h2>`;
+  if(!staff.length) h+=`<p class="muted">لسه مافيش أسماء.</p>`;
+  staff.forEach(s=>{ h+=`<div class="row" style="border-top:1px solid var(--line);padding-top:8px"><b>${esc(s.name)}</b><div class="btnrow" style="flex:0 1 auto;align-items:center"><select data-adm-level="${esc(s.id)}" aria-label="مستوى ${esc(s.name)}" style="width:auto">${['beg','mid','adv'].map(L=>`<option value="${L}" ${s.level===L?'selected':''}>${LEVELS[L]}</option>`).join('')}</select>
+    ${S.confirmDel===s.id?`<button class="btn danger" data-adm="del" data-id="${esc(s.id)}">أكيد، شيليه</button><button class="btn ghost" data-adm="nodel">لأ</button>`:`<button class="linkbtn" data-adm="askdel" data-id="${esc(s.id)}">شيل</button>`}</div></div>` });
+  return h+`<p class="small muted">لما تشيلي اسم، محاولاته القديمة بتفضل محفوظة.</p></div>`;
+}
+function toast(kind,msg){ S.toast=[kind,msg]; render(); setTimeout(()=>{ if(S.toast&&S.toast[1]===msg){ S.toast=null; render() } }, 4000) }
+function bindAdmin(){
+  const t=$('#as-target'); if(t) t.addEventListener('change',()=>{ $('#as-some').hidden = t.value!=='some' });
+  document.querySelectorAll('[data-adm-level]').forEach(sel=>sel.addEventListener('change', async ()=>{
+    try{ await Store.update('staff', sel.dataset.admLevel, {level:sel.value}); toast('ok','المستوى اتغير') }catch(e){ toast('crit','ماقدرناش نحفظ التغيير') } }));
+}
+document.addEventListener('click', async e=>{
+  const b=e.target.closest('[data-adm]'); if(!b || b.disabled) return;
+  const a=b.dataset.adm;
+  if(a==='view'){ S.adminView=b.dataset.v; S.toast=null; render(); return }
+  if(a==='filter'){ S.teamFilter=b.dataset.v; render(); return }
+  if(a==='sel'){ S.selStaff=b.dataset.id; render(); return }
+  if(a==='askdel'){ S.confirmDel=b.dataset.id; render(); return }
+  if(a==='nodel'){ S.confirmDel=null; render(); return }
+  if(a==='del'){ S.confirmDel=null; try{ await Store.update('staff', b.dataset.id, {archived:true}); toast('ok','الاسم اتشال') }catch(err){ toast('crit','ماقدرناش نشيل الاسم') } return }
+  if(a==='addstaff'){ const nm=$('#nm').value.trim(), lv=$('#lv').value; if(!nm) return;
+    if(S.staff.some(s=>!s.archived && s.name===nm)){ toast('warn','الاسم ده موجود قبل كده'); return }
+    try{ await Store.add('staff',{name:nm.slice(0,60), level:lv, created:nowIso()}); toast('ok',`اتضاف ${nm}`) }catch(err){ toast('crit','ماقدرناش نضيف الاسم') } return }
+  if(a==='bulk'){ const lv=$('#lv').value; const names=[...new Set($('#bulk').value.split('\n').map(x=>x.trim()).filter(Boolean))].filter(n=>!S.staff.some(s=>!s.archived&&s.name===n));
+    if(!names.length) return; let ok=0; for(const n of names){ try{ await Store.add('staff',{name:n.slice(0,60), level:lv, created:nowIso()}); ok++ }catch(err){} }
+    toast(ok===names.length?'ok':'warn', `اتضاف ${ok} من ${names.length}`); return }
+  if(a==='assign'){ const caseId=$('#as-case').value, target=$('#as-target').value, due=$('#as-due').value||null;
+    const staffIds = target==='some' ? [...document.querySelectorAll('.as-p:checked')].map(x=>x.value) : [];
+    if(target==='some' && !staffIds.length){ toast('warn','اختاري اسم واحد على الأقل'); return }
+    try{ await Store.add('assignments',{caseId, target, staffIds, due, at:nowIso()}); toast('ok','الحالة اتبعتت') }catch(err){ toast('crit','ماقدرناش نبعت الحالة') } return }
+  if(a==='unassign'){ try{ await Store.del('assignments', b.dataset.id) }catch(err){ toast('crit','ماقدرناش نلغيها') } return }
+  if(a==='comment'){ const ta=document.getElementById('cm-'+b.dataset.id), text=ta&&ta.value.trim(); if(!text) return;
+    try{ await Store.add('comments',{staffId:b.dataset.s, attemptId:b.dataset.id, text:text.slice(0,1000), at:nowIso()}); toast('ok','التعليق اتبعت') }catch(err){ toast('crit','ماقدرناش نبعت التعليق') } return }
+  if(a==='export'){ exportCsv(); return }
+});
+async function exportCsv(){
+  const head=['الاسم','المستوى','الحالة','المحاولة','التاريخ','الدرجة','التشخيص','صح؟','ليه','فحص الأمان','التشخيص','التفكير','جمع المعلومات','الأمان','الأخلاقيات'];
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const rows=S.attempts.filter(a=>a.staffId!==PREVIEW).sort((a,b)=>a.at<b.at?-1:1).map(a=>{ const c=byId(a.caseId);
+    return [a.staffName, LEVELS[a.level]||'', c?c.name:a.caseId, a.n, a.at.slice(0,10), a.total, a.dx, a.dxOk?'صح':a.dxScore>0?'نص صح':'غلط', a.why, a.safetyDone?'تمام':'فوّت',
+      a.axes?.dx, a.axes?.reason, a.axes?.info, a.axes?.safety, a.axes?.ethics??''].map(q).join(',') });
+  const csv='﻿'+[head.map(q).join(','),...rows].join('\r\n');
+  const name=`نتايج-الفريق-${new Date().toISOString().slice(0,10)}.csv`;
+  let dl=null; try{ if(window.claude?.use) dl=await claude.use('downloads') }catch(e){}
+  if(dl){ try{ await dl.save({filename:name, data:csv}) }catch(err){ if(err?.code!=='declined') toast('crit','ماقدرناش نصدّر الملف') } return }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download=name; document.body.appendChild(a); a.click(); a.remove();
+}
+
+boot();
+render();
+</script>
